@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Sword, Users, Expand, RotateCw } from 'lucide-react';
+import { AlertCircle, Users, Expand, Sword, RotateCw } from 'lucide-react';
 
 const GRID_SIZE = 5;
 const INITIAL_GOLD = 100;
@@ -18,6 +18,7 @@ const Empire = () => {
   const [aiArmy, setAiArmy] = useState(INITIAL_ARMY);
   const [turn, setTurn] = useState('player');
   const [message, setMessage] = useState('Welcome to Empire Tactics!');
+  const [selectedAction, setSelectedAction] = useState(null);
 
   useEffect(() => {
     initializeGame();
@@ -129,6 +130,7 @@ const Empire = () => {
     const aiTerritories = grid.flat().filter(cell => cell === 'ai').length;
     setAiGold(aiGold + aiTerritories * 10);
     setTurn('player');
+    checkWinCondition();
   };
 
   const checkWinCondition = () => {
@@ -136,9 +138,11 @@ const Empire = () => {
     const aiTerritories = grid.flat().filter(cell => cell === 'ai').length;
     if (playerTerritories === GRID_SIZE * GRID_SIZE) {
       setMessage('Congratulations! You have conquered the entire empire!');
+      setTurn('game over');
       return true;
     } else if (aiTerritories === GRID_SIZE * GRID_SIZE) {
       setMessage('Game Over. The AI has conquered the entire empire.');
+      setTurn('game over');
       return true;
     }
     return false;
@@ -166,13 +170,13 @@ const Empire = () => {
     if (turn !== 'player') return;
     
     const cell = grid[row][col];
-    if (cell === null) {
+    if (selectedAction === 'expand' && cell === null) {
       if (isAdjacentToPlayer(row, col)) {
         expand(row, col);
       } else {
         setMessage('You can only expand to adjacent territories.');
       }
-    } else if (cell === 'ai') {
+    } else if (selectedAction === 'battle' && cell === 'ai') {
       if (isAdjacentToPlayer(row, col)) {
         battle(row, col);
       } else {
@@ -180,9 +184,8 @@ const Empire = () => {
       }
     }
     
-    if (checkWinCondition()) {
-      setTurn('game over');
-    }
+    setSelectedAction(null);
+    checkWinCondition();
   };
 
   const isAdjacentToPlayer = (row, col) => {
@@ -216,6 +219,12 @@ const Empire = () => {
         <div className="flex justify-between mb-4">
           <Button onClick={recruit} disabled={turn !== 'player'}>
             <Users className="mr-2 h-4 w-4" /> Recruit (10 Gold)
+          </Button>
+          <Button onClick={() => setSelectedAction('expand')} disabled={turn !== 'player'}>
+            <Expand className="mr-2 h-4 w-4" /> Expand (50 Gold, 5 Army)
+          </Button>
+          <Button onClick={() => setSelectedAction('battle')} disabled={turn !== 'player'}>
+            <Sword className="mr-2 h-4 w-4" /> Battle
           </Button>
           <Button onClick={endTurn} disabled={turn !== 'player'}>
             <RotateCw className="mr-2 h-4 w-4" /> End Turn
